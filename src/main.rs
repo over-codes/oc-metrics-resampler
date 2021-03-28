@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    time::{UNIX_EPOCH, Duration, SystemTime},
+    time::{UNIX_EPOCH, Duration},
 };
 use chrono::prelude::*;
 use prost_types::Timestamp;
@@ -38,7 +38,8 @@ const PREFIX: &str = "hosts.";
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    let mut client: MetricsServiceClient<Channel> = MetricsServiceClient::connect("http://aura:50051").await?;
+    let remote = std::env::var("OC_METRICS_SERVER").unwrap_or_else(|_| "http://[::1]:50051".into());
+    let mut client: MetricsServiceClient<Channel> = MetricsServiceClient::connect(remote).await?;
 
     // get a list of all metrics matching the prefix we care about
     let response = client.list_metrics(Request::new(ListMetricsRequest{
@@ -115,9 +116,6 @@ async fn spin_on_identifier(identifier: String, mut client: MetricsServiceClient
             } else {
                 sleep(Duration::from_secs(60)).await;
             }
-        }
-        if response.metrics.len() == 0 {
-            sleep(Duration::from_secs(30)).await;
         }
     }
 }
