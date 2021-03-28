@@ -1,0 +1,3 @@
+[submodule "proto"]
+	path = proto
+	url = gitea@git:overcodes/oc-metrics-proto.git
