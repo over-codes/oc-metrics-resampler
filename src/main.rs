@@ -102,7 +102,7 @@ async fn spin_on_identifier(identifier: String, mut client: MetricsServiceClient
         for metric in &response.metrics {
             let (next_time, vals) = median_metrics(&metric.identifier, &metric.time_values);
             info!("Writing {} metrics", vals.len());
-            if vals.len() != 0 {
+            if !vals.is_empty() {
                 start_time = Some(next_time);
                 let req = tonic::Request::new(RecordMetricsRequest{
                     metrics: vals.clone(),
@@ -120,8 +120,8 @@ async fn spin_on_identifier(identifier: String, mut client: MetricsServiceClient
     }
 }
 
-fn median_metrics(identifier: &String, tv: &Vec<TimeValue>) -> (Timestamp, Vec<Metric>) {
-    if tv.len() == 0 {
+fn median_metrics(identifier: &str, tv: &[TimeValue]) -> (Timestamp, Vec<Metric>) {
+    if tv.is_empty() {
         return (Timestamp{
             seconds: 0,
             nanos: 0,
@@ -133,7 +133,7 @@ fn median_metrics(identifier: &String, tv: &Vec<TimeValue>) -> (Timestamp, Vec<M
     let mut vals_so_far = vec!();
     for m in tv {
         if m.when.as_ref().unwrap().seconds > start+60*5 {
-            if vals_so_far.len() > 0 {
+            if vals_so_far.is_empty() {
                 ret.push(Metric{
                     identifier: format!("{}{}", MEDIAN_PREFIX, identifier),
                     value: Some(Value::DoubleValue(median(&mut vals_so_far))),
@@ -158,8 +158,7 @@ fn median_metrics(identifier: &String, tv: &Vec<TimeValue>) -> (Timestamp, Vec<M
 
 fn align_to_5_minute(seconds: i64) -> i64 {
     let min5 = 5*60;
-    let seconds = seconds-(seconds%min5);
-    seconds
+    seconds-(seconds%min5)
 }
 
 fn median(vals: &mut Vec<f64>) -> f64 {
